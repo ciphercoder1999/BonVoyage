@@ -16,103 +16,103 @@ console.log(__dirname);
 app.use(express.static('assets'));
 app.use(express.json());
 app.use(cookieParser());
-app.use(express.urlencoded({extended:false}));
-  
+app.use(express.urlencoded({ extended: false }));
+
 
 // Defining your routes
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/index.html');
 });
 
-app.post('/',async(req,res)=>{
-  
-    formvalue=req.body.formValue;
+app.post('/', async (req, res) => {
 
-    if(formvalue==="form1"){
-      try{
+  formvalue = req.body.formValue;
 
-        const email = req.body.email;
-        const password = req.body.password;
+  if (formvalue === "form1") {
+    try {
 
-        const userMatch = await Register.findOne({email:email});
+      const email = req.body.email;
+      const password = req.body.password;
 
-        if (!userMatch) {
-          return res.json("Invalid Credentials");
-        }
+      const userMatch = await Register.findOne({ email: email });
 
-        const isMatch = await bcrypt.compare(password,userMatch.password);
-
-        const token = await userMatch.generateAuthToken();
-        // console.log(userMatch.tokens[0].token);
-
-        res.cookie("jwt",token,{
-          expires:new Date(Date.now()+86400000),
-          httpOnly:true
-        });
-
-        if(isMatch){
-          res.status(201).json(userMatch);
-        }else{
-          res.status(400).json("Invalid Credentials");
-        }
-
-      }catch (error){
-        console.log(error);
+      if (!userMatch) {
+        return res.json("Invalid Credentials");
       }
-    }
-    else if(formvalue==="form2"){
 
-      try{
+      const isMatch = await bcrypt.compare(password, userMatch.password);
 
-        const password = req.body.password;
-        const cpassword = req.body.confirmpassword;
+      const token = await userMatch.generateAuthToken();
+      // console.log(userMatch.tokens[0].token);
 
-        if(password===cpassword){
+      res.cookie("jwt", token, {
+        expires: new Date(Date.now() + 86400000),
+        httpOnly: true
+      });
 
-          const registerUser = new Register({
-            email : req.body.email,
-            username : req.body.username,
-            password : req.body.password,
-            confirmpassword : req.body.confirmpassword
-          })
-
-          // const token = await registerUser.generateAuthToken();
-
-          const registered= await registerUser.save();
-          res.json('Registration Done!');
-
-        }else{
-          res.json('passwords are not matching');
-        }
-      }catch (error) {
-        res.json('Error! Already have an account');
+      if (isMatch) {
+        res.status(201).json(userMatch);
+      } else {
+        res.status(400).json("Invalid Credentials");
       }
+
+    } catch (error) {
+      console.log(error);
     }
-  })
+  }
+  else if (formvalue === "form2") {
+
+    try {
+
+      const password = req.body.password;
+      const cpassword = req.body.confirmpassword;
+
+      if (password === cpassword) {
+
+        const registerUser = new Register({
+          email: req.body.email,
+          username: req.body.username,
+          password: req.body.password,
+          confirmpassword: req.body.confirmpassword
+        })
+
+        const token = await registerUser.generateAuthToken();
+
+        const registered = await registerUser.save();
+        res.json('Registration Done!');
+
+      } else {
+        res.json('passwords are not matching');
+      }
+    } catch (error) {
+      res.json('Error! Already have an account');
+    }
+  }
+})
 
 
 app.get('/navigation', (req, res) => {
   res.sendFile(__dirname + '/navigation.html');
 });
 
-app.get('/dashboard',auth, (req, res) => {
-  try{
-  res.sendFile(__dirname + '/dashboard.html');
-  }catch(error){
+app.get('/dashboard', auth, (req, res) => {
+  try {
+    res.sendFile(__dirname + '/dashboard.html');
+  } catch (error) {
     res.alert(error);
   }
 });
 
-app.get('/logout',auth,async (req,res)=>{
-  try{
+app.get('/logout', auth, async (req, res) => {
+  try {
     // localStorage.removeItem("userdata");
-    req.user.tokens = req.user.tokens.filter((currElement)=>{
+    req.user.tokens = req.user.tokens.filter((currElement) => {
       return currElement.token !== req.token;
     })
     res.clearCookie("jwt");
     await req.user.save();
     res.sendFile(__dirname + '/index.html');
-  }catch(error){
+  } catch (error) {
     res.status(500).send(error);
   }
 })
